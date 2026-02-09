@@ -1,0 +1,42 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test
+
+  build-and-push:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to AWS ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+      - name: Build backend image
+        run: |
+          docker build -t ${{ github.repository }}:backend -f backend/Dockerfile backend
+      - name: Build frontend image
+        run: |
+          docker build -t ${{ github.repository }}:frontend -f frontend/Dockerfile frontend
+      # Push steps are environment-specific — placeholder for ECR push
+      - name: Push images (placeholder)
+        run: echo "Configure AWS credentials and push images to ECR here"

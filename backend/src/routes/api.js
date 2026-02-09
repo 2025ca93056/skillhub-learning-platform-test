@@ -12,7 +12,7 @@ function auth(req, res, next) {
   if (!authHeader) return res.sendStatus(401);
   const token = authHeader.split(' ')[1];
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = jwt.verify(token, process.env.JWT_SECRET || 'dev');
     next();
   } catch {
     res.sendStatus(401);
@@ -48,7 +48,10 @@ router.post('/sessions/respond', auth, async (req, res) => {
   const { sessionId, action } = req.body;
   const session = await SessionRequest.findByPk(sessionId);
   if (!session) return res.status(404).json({ error: 'Not found' });
-  // Assume validation of instructor
+  // Validate that the requester is the assigned instructor
+  const requester = await User.findByPk(req.user.userId);
+  if (!requester || requester.role !== 'instructor') return res.status(403).json({ error: 'Only instructors can respond' });
+  if (session.InstructorId && session.InstructorId !== requester.id) return res.status(403).json({ error: 'Not your session request' });
   session.status = action === 'accept' ? 'accepted' : 'rejected';
   await session.save();
   res.json(session);

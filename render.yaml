@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: skillhub-api
+    runtime: node
+    buildCommand: cd backend && npm install
+    startCommand: node backend/src/index.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillhub-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: "production"
+      - key: FRONTEND_URL
+        value: "https://your-netlify-domain.netlify.app"
